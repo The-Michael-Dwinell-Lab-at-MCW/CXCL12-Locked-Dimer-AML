@@ -382,8 +382,3 @@ z <- enrichKEGG(gene=TreatmentDElist_PMN_gene_convert$ENTREZID, organism = 'mmu'
 z <- setReadable(z, OrgDb = "org.Mm.eg.db", keyType = 'ENTREZID')
 barplot(z, showCategory = 20)
 #Need to check if this is genes upregulated in treated or vehicle, depends on which group is assigned ident.1 vs ident.2 in FindMarkers function
-
-<!---
-pdanowhere/pdanowhere is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
-You can click the Preview link to take a look at your changes.
---->
