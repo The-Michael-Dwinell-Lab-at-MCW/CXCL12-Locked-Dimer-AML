@@ -1,0 +1,1020 @@
+---
+title: "AML Analysis"
+output: html_document
+date: "2023-09-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r paper info}
+#paper: https://www.sciencedirect.com/science/article/pii/S0092867419300947?via%3Dihub#sec4
+#geo: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE116256
+```
+
+
+
+```{r load packages}
+#you will need to install the packages using install(PackageNameHere) if you have not preivouslly installed them before
+
+suppressPackageStartupMessages({
+library(Seurat)
+library(tidyverse)
+library(dplyr)
+library(magrittr)
+library(data.table)
+library(Matrix)
+library(devtools)
+library(RcppArmadillo)
+library(Rcpp)
+library(scales)
+library(pheatmap)
+library(gplots)
+library(ggplot2)
+library(cowplot)
+library(tibble)
+library(data.table)
+library(hdf5r)
+library(ggpubr)
+library(RColorBrewer)
+library(sctransform)
+library(xtable)
+library(MASS)
+library(harmony)
+})
+```
+
+
+```{r load data}
+#change the text within the quotes in read.delim to the location where you stored the downloaded files
+
+aml1012 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587923_AML1012-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+aml1012md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587924_AML1012-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml1012) <- make.names(aml1012[,1], unique = TRUE)
+aml1012 <- aml1012[,-1]
+rownames(aml1012md) <- make.names(aml1012md[,1], unique = TRUE)
+aml1012md <- aml1012md[,-1]
+mat <- as(as.matrix(aml1012), "sparseMatrix")
+aml1012 <- CreateSeuratObject(counts=mat)
+aml1012 <- AddMetaData(aml1012, metadata = aml1012md)
+rm(aml1012md)
+
+aml210a <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587925_AML210A-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587926_AML210A-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml210a) <- make.names(aml210a[,1], unique = TRUE)
+aml210a <- aml210a[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml210a), "sparseMatrix")
+aml210a <- CreateSeuratObject(counts=mat)
+aml210a <- AddMetaData(aml210a, metadata = md)
+
+aml314 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587927_AML314-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587928_AML314-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml314) <- make.names(aml314[,1], unique = TRUE)
+aml314 <- aml314[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml314), "sparseMatrix")
+aml314 <- CreateSeuratObject(counts=mat)
+aml314 <- AddMetaData(aml314, metadata = md)
+
+aml314d31 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587929_AML314-D31.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587930_AML314-D31.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml314d31) <- make.names(aml314d31[,1], unique = TRUE)
+aml314d31 <- aml314d31[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml314d31), "sparseMatrix")
+aml314d31 <- CreateSeuratObject(counts=mat)
+aml314d31 <- AddMetaData(aml314d31, metadata = md)
+
+aml328 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587931_AML328-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587932_AML328-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml328) <- make.names(aml328[,1], unique = TRUE)
+aml328 <- aml328[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml328), "sparseMatrix")
+aml328 <- CreateSeuratObject(counts=mat)
+aml328 <- AddMetaData(aml328, metadata = md)
+
+aml328d113 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587933_AML328-D113.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587934_AML328-D113.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml328d113) <- make.names(aml328d113[,1], unique = TRUE)
+aml328d113 <- aml328d113[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml328d113), "sparseMatrix")
+aml328d113 <- CreateSeuratObject(counts=mat)
+aml328d113 <- AddMetaData(aml328d113, metadata = md)
+
+aml328d171 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587935_AML328-D171.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587936_AML328-D171.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml328d171) <- make.names(aml328d171[,1], unique = TRUE)
+aml328d171 <- aml328d171[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml328d171), "sparseMatrix")
+aml328d171 <- CreateSeuratObject(counts=mat)
+aml328d171 <- AddMetaData(aml328d171, metadata = md)
+
+aml328d29 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587937_AML328-D29.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587938_AML328-D29.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml328d29) <- make.names(aml328d29[,1], unique = TRUE)
+aml328d29 <- aml328d29[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml328d29), "sparseMatrix")
+aml328d29 <- CreateSeuratObject(counts=mat)
+aml328d29 <- AddMetaData(aml328d29, metadata = md)
+
+aml329d0 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587940_AML329-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587941_AML329-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml329d0) <- make.names(aml329d0[,1], unique = TRUE)
+aml329d0 <- aml329d0[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml329d0), "sparseMatrix")
+aml329d0 <- CreateSeuratObject(counts=mat)
+aml329d0 <- AddMetaData(aml329d0, metadata = md)
+
+aml329d20 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587942_AML329-D20.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587943_AML329-D20.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml329d20) <- make.names(aml329d20[,1], unique = TRUE)
+aml329d20 <- aml329d20[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml329d20), "sparseMatrix")
+aml329d20 <- CreateSeuratObject(counts=mat)
+aml329d20 <- AddMetaData(aml329d20, metadata = md)
+
+aml329d37 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587944_AML329-D37.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587945_AML329-D37.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml329d37) <- make.names(aml329d37[,1], unique = TRUE)
+aml329d37 <- aml329d37[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml329d37), "sparseMatrix")
+aml329d37 <- CreateSeuratObject(counts=mat)
+aml329d37 <- AddMetaData(aml329d37, metadata = md)
+
+aml371d0 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587946_AML371-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587947_AML371-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml371d0) <- make.names(aml371d0[,1], unique = TRUE)
+aml371d0 <- aml371d0[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml371d0), "sparseMatrix")
+aml371d0 <- CreateSeuratObject(counts=mat)
+aml371d0 <- AddMetaData(aml371d0, metadata = md)
+
+aml371d34 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587948_AML371-D34.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587949_AML371-D34.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml371d34) <- make.names(aml371d34[,1], unique = TRUE)
+aml371d34 <- aml371d34[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml371d34), "sparseMatrix")
+aml371d34 <- CreateSeuratObject(counts=mat)
+aml371d34 <- AddMetaData(aml371d34, metadata = md)
+
+aml419a <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587950_AML419A-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587951_AML419A-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml419a) <- make.names(aml419a[,1], unique = TRUE)
+aml419a <- aml419a[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml419a), "sparseMatrix")
+aml419a <- CreateSeuratObject(counts=mat)
+aml419a <- AddMetaData(aml419a, metadata = md)
+
+aml420bd0 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587953_AML420B-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587954_AML420B-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml420bd0) <- make.names(aml420bd0[,1], unique = TRUE)
+aml420bd0 <- aml420bd0[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml420bd0), "sparseMatrix")
+aml420bd0 <- CreateSeuratObject(counts=mat)
+aml420bd0 <- AddMetaData(aml420bd0, metadata = md)
+
+aml420bd14 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587955_AML420B-D14.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587956_AML420B-D14.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml420bd14) <- make.names(aml420bd14[,1], unique = TRUE)
+aml420bd14 <- aml420bd14[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml420bd14), "sparseMatrix")
+aml420bd14 <- CreateSeuratObject(counts=mat)
+aml420bd14 <- AddMetaData(aml420bd14, metadata = md)
+
+aml420bd35 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587957_AML420B-D35.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587958_AML420B-D35.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml420bd35) <- make.names(aml420bd35[,1], unique = TRUE)
+aml420bd35 <- aml420bd35[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml420bd35), "sparseMatrix")
+aml420bd35 <- CreateSeuratObject(counts=mat)
+aml420bd35 <- AddMetaData(aml420bd35, metadata = md)
+
+aml475d0 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587959_AML475-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587960_AML475-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml475d0) <- make.names(aml475d0[,1], unique = TRUE)
+aml475d0 <- aml475d0[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml475d0), "sparseMatrix")
+aml475d0 <- CreateSeuratObject(counts=mat)
+aml475d0 <- AddMetaData(aml475d0, metadata = md)
+
+aml475d29 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587961_AML475-D29.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587962_AML475-D29.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml475d29) <- make.names(aml475d29[,1], unique = TRUE)
+aml475d29 <- aml475d29[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml475d29), "sparseMatrix")
+aml475d29 <- CreateSeuratObject(counts=mat)
+aml475d29 <- AddMetaData(aml475d29, metadata = md)
+
+aml556d0 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587963_AML556-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587964_AML556-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml556d0) <- make.names(aml556d0[,1], unique = TRUE)
+aml556d0 <- aml556d0[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml556d0), "sparseMatrix")
+aml556d0 <- CreateSeuratObject(counts=mat)
+aml556d0 <- AddMetaData(aml556d0, metadata = md)
+
+aml556d15 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587965_AML556-D15.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587966_AML556-D15.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml556d15) <- make.names(aml556d15[,1], unique = TRUE)
+aml556d15 <- aml556d15[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml556d15), "sparseMatrix")
+aml556d15 <- CreateSeuratObject(counts=mat)
+aml556d15 <- AddMetaData(aml556d15, metadata = md)
+
+aml556d31 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587967_AML556-D31.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587968_AML556-D31.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml556d31) <- make.names(aml556d31[,1], unique = TRUE)
+aml556d31 <- aml556d31[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml556d31), "sparseMatrix")
+aml556d31 <- CreateSeuratObject(counts=mat)
+aml556d31 <- AddMetaData(aml556d31, metadata = md)
+
+aml707bd0 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587969_AML707B-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587970_AML707B-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml707bd0) <- make.names(aml707bd0[,1], unique = TRUE)
+aml707bd0 <- aml707bd0[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml707bd0), "sparseMatrix")
+aml707bd0 <- CreateSeuratObject(counts=mat)
+aml707bd0 <- AddMetaData(aml707bd0, metadata = md)
+
+aml707bd113 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587971_AML707B-D113.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587972_AML707B-D113.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml707bd113) <- make.names(aml707bd113[,1], unique = TRUE)
+aml707bd113 <- aml707bd113[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml707bd113), "sparseMatrix")
+aml707bd113 <- CreateSeuratObject(counts=mat)
+aml707bd113 <- AddMetaData(aml707bd113, metadata = md)
+
+aml707bd18 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587973_AML707B-D18.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587974_AML707B-D18.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml707bd18) <- make.names(aml707bd18[,1], unique = TRUE)
+aml707bd18 <- aml707bd18[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml707bd18), "sparseMatrix")
+aml707bd18 <- CreateSeuratObject(counts=mat)
+aml707bd18 <- AddMetaData(aml707bd18, metadata = md)
+
+aml707bd41 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587975_AML707B-D41.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587976_AML707B-D41.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml707bd41) <- make.names(aml707bd41[,1], unique = TRUE)
+aml707bd41 <- aml707bd41[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml707bd41), "sparseMatrix")
+aml707bd41 <- CreateSeuratObject(counts=mat)
+aml707bd41 <- AddMetaData(aml707bd41, metadata = md)
+
+aml707bd97 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587977_AML707B-D97.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587978_AML707B-D97.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml707bd97) <- make.names(aml707bd97[,1], unique = TRUE)
+aml707bd97 <- aml707bd97[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml707bd97), "sparseMatrix")
+aml707bd97 <- CreateSeuratObject(counts=mat)
+aml707bd97 <- AddMetaData(aml707bd97, metadata = md)
+
+aml722bd0 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587980_AML722B-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587981_AML722B-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml722bd0) <- make.names(aml722bd0[,1], unique = TRUE)
+aml722bd0 <- aml722bd0[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml722bd0), "sparseMatrix")
+aml722bd0 <- CreateSeuratObject(counts=mat)
+aml722bd0 <- AddMetaData(aml722bd0, metadata = md)
+
+aml722bd49 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587982_AML722B-D49.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587983_AML722B-D49.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml722bd49) <- make.names(aml722bd49[,1], unique = TRUE)
+aml722bd49 <- aml722bd49[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml722bd49), "sparseMatrix")
+aml722bd49 <- CreateSeuratObject(counts=mat)
+aml722bd49 <- AddMetaData(aml722bd49, metadata = md)
+
+aml870d0 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587984_AML870-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587985_AML870-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml870d0) <- make.names(aml870d0[,1], unique = TRUE)
+aml870d0 <- aml870d0[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml870d0), "sparseMatrix")
+aml870d0 <- CreateSeuratObject(counts=mat)
+aml870d0 <- AddMetaData(aml870d0, metadata = md)
+
+aml870d14 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587986_AML870-D14.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587987_AML870-D14.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml870d14) <- make.names(aml870d14[,1], unique = TRUE)
+aml870d14 <- aml870d14[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml870d14), "sparseMatrix")
+aml870d14 <- CreateSeuratObject(counts=mat)
+aml870d14 <- AddMetaData(aml870d14, metadata = md)
+
+aml916d0 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587988_AML916-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587989_AML916-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml916d0) <- make.names(aml916d0[,1], unique = TRUE)
+aml916d0 <- aml916d0[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml916d0), "sparseMatrix")
+aml916d0 <- CreateSeuratObject(counts=mat)
+aml916d0 <- AddMetaData(aml916d0, metadata = md)
+
+aml921ad0 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587990_AML921A-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587991_AML921A-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml921ad0) <- make.names(aml921ad0[,1], unique = TRUE)
+aml921ad0 <- aml921ad0[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml921ad0), "sparseMatrix")
+aml921ad0 <- CreateSeuratObject(counts=mat)
+aml921ad0 <- AddMetaData(aml921ad0, metadata = md)
+
+aml997d0 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587992_AML997-D0.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587993_AML997-D0.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml997d0) <- make.names(aml997d0[,1], unique = TRUE)
+aml997d0 <- aml997d0[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml997d0), "sparseMatrix")
+aml997d0 <- CreateSeuratObject(counts=mat)
+aml997d0 <- AddMetaData(aml997d0, metadata = md)
+
+aml997d35 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587994_AML997-D35.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587995_AML997-D35.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(aml997d35) <- make.names(aml997d35[,1], unique = TRUE)
+aml997d35 <- aml997d35[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(aml997d35), "sparseMatrix")
+aml997d35 <- CreateSeuratObject(counts=mat)
+aml997d35 <- AddMetaData(aml997d35, metadata = md)
+
+bm1 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587996_BM1.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587996_BM1.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(bm1) <- make.names(bm1[,1], unique = TRUE)
+bm1 <- bm1[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(bm1), "sparseMatrix")
+bm1 <- CreateSeuratObject(counts=mat)
+bm1 <- AddMetaData(bm1, metadata = md)
+
+bm2 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587997_BM2.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587997_BM2.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(bm2) <- make.names(bm2[,1], unique = TRUE)
+bm2 <- bm2[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(bm2), "sparseMatrix")
+bm2 <- CreateSeuratObject(counts=mat)
+bm2 <- AddMetaData(bm2, metadata = md)
+
+bm3 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587998_BM3.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3587999_BM3.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(bm3) <- make.names(bm3[,1], unique = TRUE)
+bm3 <- bm3[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(bm3), "sparseMatrix")
+bm3 <- CreateSeuratObject(counts=mat)
+bm3 <- AddMetaData(bm3, metadata = md)
+
+bm4 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3588000_BM4.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3588001_BM4.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(bm4) <- make.names(bm4[,1], unique = TRUE)
+bm4 <- bm4[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(bm4), "sparseMatrix")
+bm4 <- CreateSeuratObject(counts=mat)
+bm4 <- AddMetaData(bm4, metadata = md)
+
+bm5 <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3588003_BM5-34p38n.dem.txt.gz", header = T, stringsAsFactors = F)
+md <- read.delim("Z:\\Shared\\Shared Donovan\\AML Paper\\scRNA\\GSE116256_RAW/GSM3588003_BM5-34p38n.anno.txt.gz", header = T, stringsAsFactors = F)
+rownames(bm5) <- make.names(bm5[,1], unique = TRUE)
+bm5 <- bm5[,-1]
+rownames(md) <- make.names(md[,1], unique = TRUE)
+md <- md[,-1]
+mat <- as(as.matrix(bm5), "sparseMatrix")
+bm5 <- CreateSeuratObject(counts=mat)
+bm5 <- AddMetaData(bm5, metadata = md)
+
+dim(bm1)
+#27899 108
+dim(bm2)
+#27899 188
+dim(bm3)
+#27899 643
+dim(bm4)
+#27899 3738
+dim(bm5)
+#27899 1590
+dim(aml1012)
+#27899 1136
+dim(aml210a)
+#27899 748
+dim(aml419a)
+#27899 1189
+dim(aml916d0)
+#27899 933
+dim(aml921ad0)
+#27899 3813
+dim(aml314)
+#27899 162
+dim(aml314d31)
+#27899 346
+dim(aml371d0)
+#27899 756
+dim(aml371d34)
+#27899 204
+dim(aml475d0)
+#27899 423
+dim(aml475d29)
+#27899 102
+dim(aml722bd0)
+#27899 79
+dim(aml722bd49)
+#27899 73
+dim(aml870d0)
+#27899 345
+dim(aml870d14)
+#27899 96
+dim(aml997d0)
+#27899 83
+dim(aml997d35)
+#27899 187
+dim(aml329d0)
+#27899 525
+dim(aml329d20)
+#27899 953
+dim(aml329d37)
+#27899 224
+dim(aml420bd0)
+#27899 485
+dim(aml420bd14)
+#27899 1282
+dim(aml420bd35)
+#27899 743
+dim(aml556d0)
+#27899 2328
+dim(aml556d15)
+#27899 1203
+dim(aml556d31)
+#27899 1451
+dim(aml328)
+#27899 1094
+dim(aml328d29)
+#27899 1880
+dim(aml328d113)
+#27899 2029
+dim(aml328d171)
+#27899 1402
+dim(aml707bd0)
+#27899 1586
+dim(aml707bd18)
+#27899 1673
+dim(aml707bd41)
+#27899 387
+dim(aml707bd97)
+#27899 84
+dim(aml707bd113)
+#27899 708
+
+bm1$patient <- "bm1"
+bm2$patient <- "bm2"
+bm3$patient <- "bm3"
+bm4$patient <- "bm4"
+bm5$patient <- "bm5"
+aml1012$patient <- "1012"
+aml210a$patient <- "210a"
+aml314$patient <- "314"
+aml314d31$patient <- "314"
+aml328$patient <- "328"
+aml328d113$patient <- "328"
+aml328d171$patient <- "328"
+aml328d29$patient <- "328"
+aml329d0$patient <- "329"
+aml329d20$patient <- "329"
+aml329d37$patient <- "329"
+aml371d0$patient <- "371"
+aml371d34$patient <- "371"
+aml419a$patient <- "419a"
+aml420bd0$patient <- "420b"
+aml420bd14$patient <- "420b"
+aml420bd35$patient <- "420b"
+aml475d0$patient <- "475"
+aml475d29$patient <- "475"
+aml556d0$patient <- "556"
+aml556d15$patient <- "556"
+aml556d31$patient <- "556"
+aml707bd0$patient <- "707b"
+aml707bd113$patient <- "707b"
+aml707bd18$patient <- "707b"
+aml707bd41$patient <- "707b"
+aml707bd97$patient <- "707b"
+aml722bd0$patient <- "722b"
+aml722bd49$patient <- "722b"
+aml870d0$patient <- "870"
+aml870d14$patient <- "870"
+aml916d0$patient <- "916"
+aml921ad0$patient <- "921"
+aml997d0$patient <- "997"
+aml997d35$patient <- "997"
+
+bm1$sex <- "M"
+bm2$sex <- "M"
+bm3$sex <- "M"
+bm4$sex <- "M"
+bm5$sex <- "M"
+aml1012$sex <- "F"
+aml210a$sex <- "M"
+aml314$sex <- "M"
+aml314d31$sex <- "M"
+aml328$sex <- "F"
+aml328d113$sex <- "F"
+aml328d171$sex <- "F"
+aml328d29$sex <- "F"
+aml329d0$sex <- "F"
+aml329d20$sex <- "F"
+aml329d37$sex <- "F"
+aml371d0$sex <- "M"
+aml371d34$sex <- "M"
+aml419a$sex <- "F"
+aml420bd0$sex <- "M"
+aml420bd14$sex <- "M"
+aml420bd35$sex <- "M"
+aml475d0$sex <- "M"
+aml475d29$sex <- "M"
+aml556d0$sex <- "M"
+aml556d15$sex <- "M"
+aml556d31$sex <- "M"
+aml707bd0$sex <- "M"
+aml707bd113$sex <- "M"
+aml707bd18$sex <- "M"
+aml707bd41$sex <- "M"
+aml707bd97$sex <- "M"
+aml722bd0$sex <- "F"
+aml722bd49$sex <- "F"
+aml870d0$sex <- "M"
+aml870d14$sex <- "M"
+aml916d0$sex <- "F"
+aml921ad0$sex <- "M"
+aml997d0$sex <- "M"
+aml997d35$sex <- "M"
+
+#age 20-40, 40-60, 60+
+bm1$age <- "40-60"
+bm2$age <- "20-40"
+bm3$age <- "40-60"
+bm4$age <- "20-40"
+bm5$age <- "40-60"
+aml1012$age <- "20-40"
+aml210a$age <- "60+"
+aml314$age <- "40-60"
+aml314d31$age <- "40-60"
+aml328$age <- "60+"
+aml328d113$age <- "60+"
+aml328d171$age <- "60+"
+aml328d29$age <- "60+"
+aml329d0$age <- "60+"
+aml329d20$age <- "60+"
+aml329d37$age <- "60+"
+aml371d0$age <- "40-60"
+aml371d34$age <- "40-60"
+aml419a$age <- "40-60"
+aml420bd0$age <- "40-60"
+aml420bd14$age <- "40-60"
+aml420bd35$age <- "40-60"
+aml475d0$age <- "60+"
+aml475d29$age <- "60+"
+aml556d0$age <- "60+"
+aml556d15$age <- "60+"
+aml556d31$age <- "60+"
+aml707bd0$age <- "20-40"
+aml707bd113$age <- "20-40"
+aml707bd18$age <- "20-40"
+aml707bd41$age <- "20-40"
+aml707bd97$age <- "20-40"
+aml722bd0$age <- "40-60"
+aml722bd49$age <- "40-60"
+aml870d0$age <- "20-40"
+aml870d14$age <- "20-40"
+aml916d0$age <- "40-60"
+aml921ad0$age <- "40-60"
+aml997d0$age <- "60+"
+aml997d35$age <- "60+"
+
+#treatment
+bm1$treatment <- "naive"
+bm2$treatment <- "naive"
+bm3$treatment <- "naive"
+bm4$treatment <- "naive"
+bm5$treatment <- "naive"
+aml1012$treatment <- "naive"
+aml210a$treatment <- "naive"
+aml314$treatment <- "naive"
+aml314d31$treatment <- "post-induction"
+aml328$treatment <- "naive"
+aml328d113$treatment <- "Azacitidine & venetoclax"
+aml328d171$treatment <- "Azacitidine & venetoclax"
+aml328d29$treatment <- "Azacitidine & venetoclax"
+aml329d0$treatment <- "naive"
+aml329d20$treatment <- "post-induction"
+aml329d37$treatment <- "post-induction"
+aml371d0$treatment <- "naive"
+aml371d34$treatment <- "post-induction"
+aml419a$treatment <- "naive"
+aml420bd0$treatment <- "naive"
+aml420bd14$treatment <- "post-induction"
+aml420bd35$treatment <- "NA"
+aml475d0$treatment <- "naive"
+aml475d29$treatment <- "post-induction"
+aml556d0$treatment <- "naive"
+aml556d15$treatment <- "post-induction"
+aml556d31$treatment <- "post-induction"
+aml707bd0$treatment <- "naive"
+aml707bd113$treatment <- "post-induction & HIDAC"
+aml707bd18$treatment <- "post-induction"
+aml707bd41$treatment <- "post-induction"
+aml707bd97$treatment <- "post-induction & HIDAC"
+aml722bd0$treatment <- "naive"
+aml722bd49$treatment <- "post-induction"
+aml870d0$treatment <- "naive"
+aml870d14$treatment <- "post-induction"
+aml916d0$treatment <- "naive"
+aml921ad0$treatment <- "naive"
+aml997d0$treatment <- "naive"
+aml997d35$treatment <- "post-induction"
+
+bm1$aml <- "healthy"
+bm2$aml <- "healthy"
+bm3$aml <- "healthy"
+bm4$aml <- "healthy"
+bm5$aml <- "healthy"
+aml1012$aml <- "AML"
+aml210a$aml <- "AML"
+aml314$aml <- "AML"
+aml314d31$aml <- "Morphological remission"
+aml328$aml <- "AML"
+aml328d113$aml <- "AML"
+aml328d171$aml <- "AML"
+aml328d29$aml <- "AML"
+aml329d0$aml <- "AML"
+aml329d20$aml <- "Ablated marrow"
+aml329d37$aml <- "Morphological remission"
+aml371d0$aml <- "AML"
+aml371d34$aml <- "Morphological remission"
+aml419a$aml <- "AML"
+aml420bd0$aml <- "AML"
+aml420bd14$aml <- "AML"
+aml420bd35$aml <- "AML"
+aml475d0$aml <- "AML"
+aml475d29$aml <- "Morphological remission"
+aml556d0$aml <- "AML"
+aml556d15$aml <- "Ablated marrow"
+aml556d31$aml <- "Morphological remission"
+aml707bd0$aml <- "AML"
+aml707bd113$aml <- "AML"
+aml707bd18$aml <- "AML"
+aml707bd41$aml <- "AML"
+aml707bd97$aml <- "AML"
+aml722bd0$aml <- "AML"
+aml722bd49$aml <- "AML"
+aml870d0$aml <- "AML"
+aml870d14$aml <- "Ablated marrow"
+aml916d0$aml <- "AML"
+aml921ad0$aml <- "AML"
+aml997d0$aml <- "AML"
+aml997d35$aml <- "Morphological remission"
+```
+
+
+
+```{r harmony integration}
+#the files have already been quality checked for mitochondrial gene presence, so we can move straight to integration
+
+merged <- merge(bm1, y = c(bm2, bm3, bm4, bm5, aml1012, aml210a, aml314, aml314d31, aml328, aml328d113, aml328d171, aml328d29, aml329d0, aml329d20, aml329d37, aml371d0, aml371d34, aml419a, aml420bd0, aml420bd14, aml420bd35, aml475d0, aml475d29, aml556d0, aml556d15, aml556d31, aml707bd0, aml707bd113, aml707bd18, aml707bd41, aml707bd97, aml722bd0, aml722bd49, aml870d0, aml870d14, aml916d0, aml921ad0, aml997d0, aml997d35), add.cell.ids = c('bm1', 'bm2', 'bm3', 'bm4', 'bm5', 'aml1012', 'aml210a', 'aml314', 'aml314d31', 'aml328', 'aml328d113', 'aml328d171', 'aml328d29', 'aml329d0', 'aml329d20', 'aml329d37', 'aml371d0', 'aml371d34', 'aml419a', 'aml420bd0', 'aml420bd14', 'aml420bd35', 'aml475d0', 'aml475d29', 'aml556d0', 'aml556d15', 'aml556d31', 'aml707bd0', 'aml707bd113', 'aml707bd18', 'aml707bd41', 'aml707bd97', 'aml722bd0', 'aml722bd49', 'aml870d0', 'aml870d14', 'aml916d0', 'aml921ad0', 'aml997d0', 'aml997d35'), project = "aml")
+
+merged <- SCTransform(merged, ncells = 5000, verbose = TRUE)
+merged <- RunPCA(merged, assay = "SCT", npcs = 50)
+
+
+aml <- RunHarmony(merged, 
+				group.by.vars = c("aml", "patient"), 
+				reduction = "pca", assay.use = "SCT", reduction.save = "harmony")
+
+aml <- RunUMAP(aml, reduction = "harmony", assay = "SCT", dims = 1:40)
+
+aml <- FindNeighbors(object = aml, reduction = "harmony")
+aml <- FindClusters(aml, resolution = 0.6)
+#can increase or decrease the resolution if you want more or less clusters, respectively. However, you will have to ensure that you do not over or under cluster your cells
+DimPlot(aml, label = TRUE)
+```
+
+
+```{r clustering}
+DefaultAssay(aml) <- "RNA"
+aml <- ScaleData(aml, verbose = FALSE)
+cluster_markers <- FindAllMarkers(aml, only.pos = TRUE, min.pct = 0.2, logfc.threshold = 0.25)
+write.csv(cluster_markers, "cluster_markers_aml.csv", row.names = TRUE)
+#use the cluster markers to help assign cell identity
+
+DimPlot(aml, label = TRUE)
+#0 Myeloid progenitor
+#1 Naive T
+#2 Activated T cells
+#3 Macrophage precursor
+#4 Macrophage
+#5 CD8 T cells
+#6 Macrophage
+#7 RBC
+#8 CXCL8 (macrophage) Proliferating
+#9 B cells
+#10 Neutrophil
+#11 DC
+#12 DC Progenitor
+#13 Plasmacytoid DC
+#14 B cells
+#15 RBC (proliferating)
+#16 OXPHOS T cells/maybe not
+#17 Myeloid progenitor
+#18 Myeloid Progenitor
+
+DimPlot(aml, label = TRUE)
+#can change the genes found within the dotplot text to help assign cluster identity
+
+DotPlot(aml, features = c('CD3E', 'CD8A', 'CXCR2', 'CD1C', 'CD14', 'NCAM1', "MKI67"), cols = c('red', 'blue'), col.min = 0)  + FontSize(x.text = 8, y.text = 10) + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+
+aml <- RenameIdents(object = aml,  '0' = 'Myeloid progenitor', '1' = 'Naive T', '2' = 'Activated T cells', '3' = 'Macrophage precursor', '4' = 'Macrophage', '5' = 'CD8 T cells', '6' = 'Macrophage', '7' = 'RBC', '8' = 'Proliferating', '9' = 'B cells', '10' = 'Neutrophil', '11' = 'DC', '12' = 'DC Progenitor', '13' = 'pDC', '14' = 'B cells', '15' = 'RBC', '16' = 'NK cell', '17' = 'Myeloid progenitor', '18' = 'Myeloid progenitor')
+
+aml$cellids <- Idents(aml)
+
+saveRDS(aml, "aml.RDS")
+#use this to save your R object for quicker loading
+
+aml <- readRDS("aml.RDS")
+#load the R object using this function
+
+DotPlot(aml, features = 'CXCR4', group.by = 'patient')
+
+Idents(aml) <- "aml"
+
+aml1 <- subset(x = aml, idents = "healthy", invert = TRUE)
+#we will use aml1 to only look at cells in AML and not healthy marrow
+
+Idents(aml1) <- "cellids"
+
+aml1 <- RenameIdents(object = aml1,  'Macrophage' = 'Monocyte', 'Macrophage precursor' = 'Monocyte precursor')
+FeaturePlot(aml1, features = "CXCR4", label = T, label.size = 7, max.cutoff = 5, repel = TRUE, cols = c("lightgrey", "blue")) + FontSize(x.text = 0, y.text = 0) + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+ggsave("Images/featureplot_aml_all_cxcr4.png", bg="white", dpi = 300)
+#this function recreates the figure seen in Figure 6A
+
+```
+
+
+```{r sort by CXCR4 expression in monocytes}
+
+r4pos <- subset(aml1, idents = c("Monocyte", "Monocyte precursor"), CXCR4 > 0)
+r4neg <- subset(aml1, idents = c("Monocyte", "Monocyte precursor"), CXCR4 < 0.00001)
+table(Idents(r4pos))
+#Monocyte = 1398, precursor = 1199
+table(Idents(r4neg))
+#Monocyte = 3168, precursor = 1431
+r4pos$cxcr4 <- "cxcr4+"
+r4neg$cxcr4 <- "cxcr4-"
+r4pos <- RenameIdents(object = r4pos,  'Monocyte' = 'CXCR4+ Monocyte', 'Monocyte precursor' = 'CXCR4+ Monocyte precursor')
+r4neg <- RenameIdents(object = r4neg,  'Monocyte' = 'CXCR4- Monocyte', 'Monocyte precursor' = 'CXCR4- Monocyte precursor')
+aml_cxcr4 <- merge(r4pos, y = r4neg, add.cell.ids = c("cxcr4+", "cxcr4-"), project = "AML CXCR4")
+gc()
+aml_cxcr4 <- SCTransform (aml_cxcr4, ncells = 5000, verbose = FALSE)
+gc()
+aml_cxcr4 <- RunPCA(aml_cxcr4, npcs = 50) #50 PCs is default for scTransform
+aml_cxcr4 <- RunUMAP(aml_cxcr4, dims = 1:50)
+DimPlot(aml_cxcr4, label = T)
+DefaultAssay(aml_cxcr4) <- "RNA"
+#Normalize RNA for better looking violin plots
+gc()
+aml_cxcr4 <- NormalizeData(aml_cxcr4)
+
+monocytes_by_r4 <- subset(x = aml_cxcr4, idents = c("CXCR4+ Monocyte", "CXCR4- Monocyte"))
+monocyte_precursors_by_r4 <- subset(x = aml_cxcr4, idents = c("CXCR4+ Monocyte precursor", "CXCR4- Monocyte precursor"))
+
+monocyte_r4_markers <- FindAllMarkers(monocytes_by_r4, only.pos = TRUE, min.pct = 0.2, logfc.threshold = 0.2)
+monocyte_precursor_r4_markers <- FindAllMarkers(monocyte_precursors_by_r4, only.pos = TRUE, min.pct = 0.2, logfc.threshold = 0.2)
+write.csv(monocyte_r4_markers, "monocyte_r4_markers.csv", row.names = TRUE)
+write.csv(monocyte_precursor_r4_markers, "monocyte_precursor_r4_markers.csv", row.names = TRUE)
+
+
+VlnPlot(monocytes_by_r4, features = c('JUN', 'IRF2BP2', 'FLT3')) + RestoreLegend(position = "right")  & theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+ggsave("Images/Vln_monocyte_r4_DEGs.tiff", device = grDevices::tiff)
+#this recreates the figure seen in figure 6C
+
+VlnPlot(monocyte_precursors_by_r4, features = c('JUN', 'IRF2BP2', 'VMP1', 'CITED2')) + RestoreLegend(position = "right")  & theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+ggsave("Images/Vln_monocyte_precursor_r4_DEGs.tiff", device = grDevices::tiff)
+#this recreates the figure seen in figure INSERT HERE C
+
+
+```
+
+```{r transcription regulon analysis using CollecTRI}
+mat <- as.matrix(monocytes_by_r4@assays$RNA@data)
+acts <- run_wmean(mat = mat, net=net, .source='source', .target = 'target', .mor = 'mor', times = 100, minsize = 5)
+
+monocytes_by_r4[['tfswmean']] <- acts %>%
+  filter(statistic == 'norm_wmean') %>%
+  pivot_wider(id_cols = 'source', names_from = 'condition',
+              values_from = 'score') %>%
+  column_to_rownames('source') %>%
+  Seurat::CreateAssayObject(.)
+
+# Change assay
+DefaultAssay(object = monocytes_by_r4) <- "tfswmean"
+
+# Scale the data
+monocytes_by_r4 <- ScaleData(monocytes_by_r4)
+monocytes_by_r4@assays$tfswmean@data <- monocytes_by_r4@assays$tfswmean@scale.data
+
+n_tfs <- 25
+df <- t(as.matrix(monocytes_by_r4@assays$tfswmean@data)) %>%
+  as.data.frame() %>%
+  mutate(cluster = Idents(monocytes_by_r4)) %>%
+  pivot_longer(cols = -cluster, names_to = "source", values_to = "score") %>%
+  group_by(cluster, source) %>%
+  summarise(mean = mean(score))
+
+tfs <- df %>%
+  group_by(source) %>%
+  summarise(std = sd(mean)) %>%
+  arrange(-abs(std)) %>%
+  head(n_tfs) %>%
+  pull(source)
+
+top_acts_mat <- df %>%
+  filter(source %in% tfs) %>%
+  pivot_wider(id_cols = 'cluster', names_from = 'source',
+              values_from = 'mean') %>%
+  column_to_rownames('cluster') %>%
+  as.matrix()
+
+palette_length = 100
+my_color = colorRampPalette(c("Darkblue", "white","red"))(palette_length)
+
+my_breaks <- c(seq(-3, 0, length.out=ceiling(palette_length/2) + 1),
+               seq(0.05, 3, length.out=floor(palette_length/2)))
+write.csv(top_acts_mat, "cxcr4_monocytes_TFs.csv", row.names = TRUE)
+#this recreates the data seen in Supplementary Table 1
+pheatmap(top_acts_mat, border_color = NA, color=my_color, breaks = my_breaks)
+#save pheatmap
+xx <- pheatmap(top_acts_mat, border_color = NA, color=my_color, breaks = my_breaks)
+save_pheatmap_pdf <- function(x, filename, width=7, height=7) {
+    stopifnot(!missing(x))
+    stopifnot(!missing(filename))
+    pdf(filename, width=width, height=height)
+    grid::grid.newpage()
+    grid::grid.draw(x$gtable)
+    dev.off()
+}
+save_pheatmap_pdf(xx, "cxcr4_monocytes_TFs_heatmap.pdf")
+
+mat <- as.matrix(monocyte_precursors_by_r4@assays$RNA@data)
+acts <- run_wmean(mat = mat, net=net, .source='source', .target = 'target', .mor = 'mor', times = 100, minsize = 5)
+
+monocyte_precursors_by_r4[['tfswmean']] <- acts %>%
+  filter(statistic == 'norm_wmean') %>%
+  pivot_wider(id_cols = 'source', names_from = 'condition',
+              values_from = 'score') %>%
+  column_to_rownames('source') %>%
+  Seurat::CreateAssayObject(.)
+
+# Change assay
+DefaultAssay(object = monocyte_precursors_by_r4) <- "tfswmean"
+
+# Scale the data
+monocyte_precursors_by_r4 <- ScaleData(monocyte_precursors_by_r4)
+monocyte_precursors_by_r4@assays$tfswmean@data <- monocyte_precursors_by_r4@assays$tfswmean@scale.data
+
+n_tfs <- 25
+df <- t(as.matrix(monocyte_precursors_by_r4@assays$tfswmean@data)) %>%
+  as.data.frame() %>%
+  mutate(cluster = Idents(monocyte_precursors_by_r4)) %>%
+  pivot_longer(cols = -cluster, names_to = "source", values_to = "score") %>%
+  group_by(cluster, source) %>%
+  summarise(mean = mean(score))
+
+tfs <- df %>%
+  group_by(source) %>%
+  summarise(std = sd(mean)) %>%
+  arrange(-abs(std)) %>%
+  head(n_tfs) %>%
+  pull(source)
+
+top_acts_mat <- df %>%
+  filter(source %in% tfs) %>%
+  pivot_wider(id_cols = 'cluster', names_from = 'source',
+              values_from = 'mean') %>%
+  column_to_rownames('cluster') %>%
+  as.matrix()
+
+palette_length = 100
+my_color = colorRampPalette(c("Darkblue", "white","red"))(palette_length)
+
+my_breaks <- c(seq(-3, 0, length.out=ceiling(palette_length/2) + 1),
+               seq(0.05, 3, length.out=floor(palette_length/2)))
+write.csv(top_acts_mat, "cxcr4_monocytes_precursors_TFs.csv", row.names = TRUE)
+#this recreates the data seen in Supplementary Table 1
+pheatmap(top_acts_mat, border_color = NA, color=my_color, breaks = my_breaks)
+#save pheatmap
+xy <- pheatmap(top_acts_mat, border_color = NA, color=my_color, breaks = my_breaks)
+save_pheatmap_pdf <- function(x, filename, width=7, height=7) {
+    stopifnot(!missing(x))
+    stopifnot(!missing(filename))
+    pdf(filename, width=width, height=height)
+    grid::grid.newpage()
+    grid::grid.draw(x$gtable)
+    dev.off()
+}
+save_pheatmap_pdf(xy, "cxcr4_monocytes_precursors_TFs_heatmap.pdf")
+```
+
+
+```{r miscellaneous}
+
+healthy <- subset(x = aml, idents = "healthy")
+#we can use healthy to only look at cells from the marrow of healthy donors
+
+healthy1 <- subset(x = healthy, idents = c("B cells", "NK cell", 'Naive T', 'Activated T cells', 'CD8 T cells'), invert = TRUE)
+#we can use healthy1 to only look at cells from the marrow of healthy donors that we can compare to AML
+DimPlot(healthy1, label = TRUE)
+Idents(healthy1) <- "cellids"
+healthy1 <- RenameIdents(object = healthy1,  'Macrophage' = 'Monocyte', 'Macrophage precursor' = 'Monocyte precursor')
+
+aml2 <- subset(x = aml1, idents = c("B cells", "NK cell", 'Naive T', 'Activated T cells', 'CD8 T cells'), invert = TRUE)
+#we can use aml2 to only look at the cells typically involved in AML (myeloid like cells)
+DimPlot(aml2, label = TRUE)
+Idents(aml2) <- "cellids"
+aml2 <- RenameIdents(object = aml2,  'Macrophage' = 'Monocyte', 'Macrophage precursor' = 'Monocyte precursor')
+
+
+VlnPlot(aml, features = 'CXCR4', split.by = 'orig.ident', idents = '556') + RestoreLegend(position = "right")  & theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+#can use this function to examine CXCR4 expression (or your gene of interest) by patient
+
+Idents(aml2) <- "patient"
+cxcr4hi <- subset(x = aml2, idents = c("371", "419a", '475', '556'))
+#use this if you would like to look at the patients that had higher CXCR4. These patients all had monocytic differentiation (can find patient info in the supplemental from the paper (Table S1))
+
+```
+
+
