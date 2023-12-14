@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r load packages}
-#you will need to install the packages using install(PackageNameHere) if you have not preivouslly installed them before
+#you will need to install the packages using install(PackageNameHere) if you have not preivously installed them before
 
 suppressPackageStartupMessages({
 library(Seurat)
@@ -452,6 +452,7 @@ mat <- as(as.matrix(bm5), "sparseMatrix")
 bm5 <- CreateSeuratObject(counts=mat)
 bm5 <- AddMetaData(bm5, metadata = md)
 
+#first number is genes, second number is number of cells
 dim(bm1)
 #27899 108
 dim(bm2)
@@ -533,6 +534,7 @@ dim(aml707bd97)
 dim(aml707bd113)
 #27899 708
 
+#add metadata
 bm1$patient <- "bm1"
 bm2$patient <- "bm2"
 bm3$patient <- "bm3"
@@ -745,6 +747,7 @@ aml997d35$aml <- "Morphological remission"
 
 ```{r harmony integration}
 #the files have already been quality checked for mitochondrial gene presence, so we can move straight to integration
+#need to use Harmony due to large differences in object sizes (number of cells in each object). 
 
 merged <- merge(bm1, y = c(bm2, bm3, bm4, bm5, aml1012, aml210a, aml314, aml314d31, aml328, aml328d113, aml328d171, aml328d29, aml329d0, aml329d20, aml329d37, aml371d0, aml371d34, aml419a, aml420bd0, aml420bd14, aml420bd35, aml475d0, aml475d29, aml556d0, aml556d15, aml556d31, aml707bd0, aml707bd113, aml707bd18, aml707bd41, aml707bd97, aml722bd0, aml722bd49, aml870d0, aml870d14, aml916d0, aml921ad0, aml997d0, aml997d35), add.cell.ids = c('bm1', 'bm2', 'bm3', 'bm4', 'bm5', 'aml1012', 'aml210a', 'aml314', 'aml314d31', 'aml328', 'aml328d113', 'aml328d171', 'aml328d29', 'aml329d0', 'aml329d20', 'aml329d37', 'aml371d0', 'aml371d34', 'aml419a', 'aml420bd0', 'aml420bd14', 'aml420bd35', 'aml475d0', 'aml475d29', 'aml556d0', 'aml556d15', 'aml556d31', 'aml707bd0', 'aml707bd113', 'aml707bd18', 'aml707bd41', 'aml707bd97', 'aml722bd0', 'aml722bd49', 'aml870d0', 'aml870d14', 'aml916d0', 'aml921ad0', 'aml997d0', 'aml997d35'), project = "aml")
 
