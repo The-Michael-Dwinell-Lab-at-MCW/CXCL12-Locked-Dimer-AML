@@ -10,9 +10,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 
-```{r paper info}
-#paper: https://www.sciencedirect.com/science/article/pii/S0092867419300947?via%3Dihub#sec4
-#geo: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE116256
+```{r source paper info}
+#paper containing data used for analysis: https://www.sciencedirect.com/science/article/pii/S0092867419300947?via%3Dihub#sec4
+#geo containing data used for analysis: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE116256
 ```
 
 
