@@ -1,0 +1,287 @@
+---
+title: "2025 AML scRNA Analysis"
+author: "Donovan Drouillard"
+date: "2025-02-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r paper info}
+#paper: https://www.sciencedirect.com/science/article/pii/S0092867419300947?via%3Dihub#sec4
+#geo: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE116256
+```
+
+
+
+```{r load packages}
+#you will need to install the packages using install(PackageNameHere) if you have not preivouslly installed them before
+
+suppressPackageStartupMessages({
+library(Seurat)
+library(tidyverse)
+library(dplyr)
+library(magrittr)
+library(data.table)
+library(Matrix)
+library(devtools)
+library(RcppArmadillo)
+library(Rcpp)
+library(scales)
+library(pheatmap)
+library(gplots)
+library(ggplot2)
+library(cowplot)
+library(tibble)
+library(data.table)
+library(hdf5r)
+library(ggpubr)
+library(RColorBrewer)
+library(sctransform)
+library(xtable)
+library(MASS)
+library(harmony)
+})
+```
+
+```{r aml cxcr4 analysis revision}
+setwd("Z:/Shared/Shared Donovan/Papers/AML Paper/scRNA")
+#the files have already been quality checked for mitochondrial gene presence, so we can move straight to integration
+
+aml <- merge(bm1, y = c(bm2, bm3, bm4, bm5, aml1012, aml210a, aml314, aml314d31, aml328, aml328d113, aml328d171, aml328d29, aml329d0, aml329d20, aml329d37, aml371d0, aml371d34, aml419a, aml420bd0, aml420bd14, aml420bd35, aml475d0, aml475d29, aml556d0, aml556d15, aml556d31, aml707bd0, aml707bd113, aml707bd18, aml707bd41, aml707bd97, aml722bd0, aml722bd49, aml870d0, aml870d14, aml916d0, aml921ad0, aml997d0, aml997d35), add.cell.ids = c('bm1', 'bm2', 'bm3', 'bm4', 'bm5', 'aml1012', 'aml210a', 'aml314', 'aml314d31', 'aml328', 'aml328d113', 'aml328d171', 'aml328d29', 'aml329d0', 'aml329d20', 'aml329d37', 'aml371d0', 'aml371d34', 'aml419a', 'aml420bd0', 'aml420bd14', 'aml420bd35', 'aml475d0', 'aml475d29', 'aml556d0', 'aml556d15', 'aml556d31', 'aml707bd0', 'aml707bd113', 'aml707bd18', 'aml707bd41', 'aml707bd97', 'aml722bd0', 'aml722bd49', 'aml870d0', 'aml870d14', 'aml916d0', 'aml921ad0', 'aml997d0', 'aml997d35'), project = "aml")
+
+aml <- JoinLayers(aml)
+aml[["RNA"]] <- split(aml[["RNA"]], f = aml$sample)
+aml
+
+aml <- NormalizeData(aml)
+aml <- FindVariableFeatures(aml)
+aml <- ScaleData(aml)
+aml <- RunPCA(aml)
+
+
+aml <- IntegrateLayers(
+  object = aml, method = HarmonyIntegration,
+  orig.reduction = "pca", new.reduction = "harmony",
+  verbose = TRUE
+)
+
+DimPlot(aml, label = T)
+
+Idents(aml) <- "CellType"
+
+aml[["RNA"]] <- JoinLayers(aml[["RNA"]])
+aml <- FindNeighbors(aml, reduction = "harmony", dims = 1:30)
+aml <- FindClusters(aml, resolution = 0.3)
+DimPlot(aml, label = T)
+
+DimPlot(aml, label = T, split.by = "aml", repel = TRUE)
+DimPlot(aml, label = T, split.by = "treatment")
+
+cluster_markers_2025 <- FindAllMarkers(aml, only.pos = TRUE, min.pct = 0.2, logfc.threshold = 0.2)
+write.csv(cluster_markers_2025, "cluster_markers_2025.csv", row.names = TRUE)
+
+#13 clusters
+#0 HSC
+#1 T cell
+#2 Macrophage?
+#3 #cycling
+#4 CD8
+#5 RBC precursor
+#6 Plasma/B precursors
+#7 DC
+#8 Neutrophil
+#9 NK/apoptotic
+#10 B cells
+#11 Plasma/B precursors
+#12 Megakaryocytes
+
+aml <- RenameIdents(object = aml,  '0' = 'HSC', '1' = 'T cell', '2' = 'Monocyte', '3' = 'Cycling', '4' = 'CD8', '5' = 'Erythroid precursor', '6' = 'B precursor', '7' = 'DC', '8' = 'Neutrophil', '9' = 'NK', '10' = 'B cell', '11' = 'B precursor', '12' = 'Megakarocyte')
+
+saveRDS(aml, "aml_2025.RDS")
+
+aml <- readRDS("aml_2025.RDS")
+
+
+aml$dd_celltype <- Idents(aml)
+
+
+#remove non-diseased bone marrow samples
+Idents(aml) <- "aml"
+aml <- subset(x = aml, idents = "AML")
+
+Idents(aml) <- "CellType"
+```
+
+```{r fig 6a}
+DotPlot(aml, features = "CXCR4", cols = c('blue', 'red'), col.min = 0)  + FontSize(x.text = 8, y.text = 10) + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+ggsave("Images/cxcr4_dot_aml.png", bg="white", dpi = 300)
+
+```
+
+```{r fig 6b}
+aml_mono <- subset(x = aml, idents = c("Mono", "Mono-like"))
+aml_mono <- RenameIdents(object = aml_mono,  'Mono-like' = 'Malignant Monocyte', 'Mono' = 'Healthy Monocyte')
+
+VlnPlot(aml_mono, features = "CXCR4", cols = c('blue', 'red', "green"))  + FontSize(x.text = 8, y.text = 10) + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+ggsave("Images/cxcr4_healthy_malignant_mono.png", bg="white", dpi = 300)
+```
+
+
+```{r fig 6c}
+mast.aml_mono.de <- FindMarkers(object = aml_mono, 
+                         ident.1 = "Malignant Monocyte", 
+                         ident.2 = "Healthy Monocyte",
+                         test.use = "MAST")
+write.csv(mast.aml_mono.de, "mast.aml_mono.de.csv", row.names = TRUE)
+
+aml_mono_cxcr4pos <- subset(x = aml_mono, idents = "Malignant Monocyte", CXCR4 > 0)
+aml_mono_cxcr4neg <- subset(x = aml_mono, idents = "Malignant Monocyte", CXCR4 < 0.000000000001)
+
+table(Idents(aml_mono_cxcr4pos))
+#1011
+table(Idents(aml_mono_cxcr4neg))
+#1515
+
+aml_mono_cxcr4pos$cxcr4 <- "CXCR4+"
+aml_mono_cxcr4neg$cxcr4 <- "CXCR4-"
+
+aml_mono_cxcr4pos <- RenameIdents(object = aml_mono_cxcr4pos,  'Malignant Monocyte' = 'CXCR4+ Malignant Monocyte')
+aml_mono_cxcr4neg <- RenameIdents(object = aml_mono_cxcr4neg,  'Malignant Monocyte' = 'CXCR4- Malignant Monocyte')
+
+aml_mono_cxcr4 <- merge(aml_mono_cxcr4pos, y = aml_mono_cxcr4neg, add.cell.ids = c("CXCR4+", "CXCR4-"), project = "AML CXCR4")
+
+aml_mono_cxcr4 <- JoinLayers(aml_mono_cxcr4)
+
+aml_mono_cxcr4_markers <- FindMarkers(object = aml_mono_cxcr4, 
+                         ident.1 = "CXCR4+ Malignant Monocyte", 
+                         ident.2 = "CXCR4- Malignant Monocyte",
+                         test.use = "MAST")
+write.csv(aml_mono_cxcr4_markers, "aml_mono_cxcr4_markers.csv", row.names = TRUE)
+
+ BiocManager::install('EnhancedVolcano')
+ library(EnhancedVolcano)
+ 
+ 
+ df <- read.csv('aml_mono_cxcr4_markers.csv', row.names = 1)
+ 
+  EnhancedVolcano(df,
+    lab = rownames(df),
+    x = 'avg_log2FC',
+    y = 'p_val_adj',
+    selectLab = c('JUN','CITED2','HLX',
+      'SAP30','AREG','ARL4A','HMGB2','APOOL','LPAR6', "IFITM3"),
+    xlab = bquote(~Log[2]~ 'fold change'),
+    pCutoff = 0.005,
+    xlim = c(-2.5, 2.5),
+    FCcutoff = 0.5,
+    pointSize = 2.0,
+    labSize = 3.0,
+    labCol = 'black',
+    labFace = 'bold',
+    boxedLabels = TRUE,
+    colAlpha = 4/5,
+    legendPosition = 'right',
+    legendLabSize = 14,
+    legendIconSize = 4.0,
+    drawConnectors = TRUE,
+    widthConnectors = 1.0,
+    colConnectors = 'black')
+ggsave("Images/mono_cxcr4_markers_volcano.png", bg="white", dpi = 300)
+```
+
+
+```{r fig 6d}
+library(decoupleR)
+library(OmnipathR)
+
+
+net <- get_collectri(organism = 'human', split_complexes = FALSE)
+#this was used for seurat v4: mat <- as.matrix(aml_mono_cxcr4@assays$RNA@data)
+#use below for seurat v5 object
+mat <- as.matrix(aml_mono_cxcr4[["RNA"]]$data)
+acts <- run_wmean(mat = mat, net=net, .source='source', .target = 'target', .mor = 'mor', times = 100, minsize = 5)
+gc()
+
+aml_mono_cxcr4[['tfswmean']] <- acts %>%
+  filter(statistic == 'norm_wmean') %>%
+  pivot_wider(id_cols = 'source', names_from = 'condition',
+              values_from = 'score') %>%
+  column_to_rownames('source') %>%
+  Seurat::CreateAssayObject(.)
+
+# Change assay
+DefaultAssay(object = aml_mono_cxcr4) <- "tfswmean"
+
+# Scale the data
+aml_mono_cxcr4 <- ScaleData(aml_mono_cxcr4)
+#seurat v4 method: aml_mono_cxcr4@assays$tfswmean@data <- aml_mono_cxcr4@assays$tfswmean@scale.data
+#below is seurat v5
+aml_mono_cxcr4[["tfswmean"]]$data <- aml_mono_cxcr4[["tfswmean"]]$scale.data
+
+
+n_tfs <- 25
+df <- t(as.matrix(aml_mono_cxcr4[["tfswmean"]]$data)) %>%
+  as.data.frame() %>%
+  mutate(cluster = Idents(aml_mono_cxcr4)) %>%
+  pivot_longer(cols = -cluster, names_to = "source", values_to = "score") %>%
+  group_by(cluster, source) %>%
+  summarise(mean = mean(score))
+
+tfs <- df %>%
+  group_by(source) %>%
+  summarise(std = sd(mean)) %>%
+  arrange(-abs(std)) %>%
+  head(n_tfs) %>%
+  pull(source)
+
+top_acts_mat <- df %>%
+  filter(source %in% tfs) %>%
+  pivot_wider(id_cols = 'cluster', names_from = 'source',
+              values_from = 'mean') %>%
+  column_to_rownames('cluster') %>%
+  as.matrix()
+
+palette_length = 100
+my_color = colorRampPalette(c("Darkblue", "white","red"))(palette_length)
+
+my_breaks <- c(seq(-3, 0, length.out=ceiling(palette_length/2) + 1),
+               seq(0.05, 3, length.out=floor(palette_length/2)))
+write.csv(top_acts_mat, "aml_mono_cxcr4_TFs.csv", row.names = TRUE)
+pheatmap(top_acts_mat, border_color = NA, color=my_color, breaks = my_breaks)
+#save pheatmap
+xx <- pheatmap(top_acts_mat, border_color = NA, color=my_color, breaks = my_breaks)
+save_pheatmap_pdf <- function(x, filename, width=7, height=7) {
+    stopifnot(!missing(x))
+    stopifnot(!missing(filename))
+    pdf(filename, width=width, height=height)
+    grid::grid.newpage()
+    grid::grid.draw(x$gtable)
+    dev.off()
+}
+save_pheatmap_pdf(xx, "aml_mono_cxcr4_TFs_heatmap.pdf")
+
+
+DefaultAssay(object = aml_mono_cxcr4) <- "RNA"
+```
+
+
+```{r miscellaneous}
+aml_cdc <- subset(x = aml, idents = c("cDC", "cDC-like"))
+aml_gmp <- subset(x = aml, idents = c("GMP", "GMP-like"))
+aml_promono <- subset(x = aml, idents = c("ProMono", "ProMono-like"))
+aml_prog <- subset(x = aml, idents =c("Prog", "Prog-like"))
+aml_hsc <- subset(x = aml, idents = c("HSC", "HSC-like"))
+
+VlnPlot(aml_cdc, features = "CXCR4", cols = c('blue', 'red', "green"), split.by = "CellType")  + FontSize(x.text = 8, y.text = 10) + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+
+VlnPlot(aml_gmp, features = "CXCR4", cols = c('blue', 'red', "green"), split.by = "CellType")  + FontSize(x.text = 8, y.text = 10) + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+
+VlnPlot(aml_promono, features = "CXCR4", cols = c('blue', 'red', "green"), split.by = "CellType")  + FontSize(x.text = 8, y.text = 10) + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+
+VlnPlot(aml_prog, features = "CXCR4", cols = c('blue', 'red', "green"), split.by = "CellType")  + FontSize(x.text = 8, y.text = 10) + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+
+VlnPlot(aml_hsc, features = "CXCR4", cols = c('blue', 'red', "green"), split.by = "CellType")  + FontSize(x.text = 8, y.text = 10) + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+```
